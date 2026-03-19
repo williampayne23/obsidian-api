@@ -41,3 +41,14 @@ class SearchResult(BaseModel):
 class SearchResponse(BaseModel):
     results: list[SearchResult]
     total: int
+
+
+class FrontmatterIssue(BaseModel):
+    path: str
+    error: str
+
+
+class FrontmatterCheckResponse(BaseModel):
+    issues: list[FrontmatterIssue]
+    total: int
+    scanned: int

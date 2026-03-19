@@ -123,6 +123,41 @@ class TestSearch:
         assert results == []
 
 
+class TestMalformedFrontmatter:
+    def test_list_notes_with_bad_yaml(self, vault_dir, vault_service):
+        (vault_dir / "bad.md").write_text("---\n: :\n  bad:\n\t\t[unbalanced\n---\nContent here.")
+        notes = vault_service.list_notes()
+        bad = [n for n in notes if n.path == "bad.md"]
+        assert len(bad) == 1
+        assert bad[0].metadata == {}
+
+    def test_get_note_with_bad_yaml(self, vault_dir, vault_service):
+        (vault_dir / "bad.md").write_text("---\n: :\n  bad:\n\t\t[unbalanced\n---\nContent here.")
+        note = vault_service.get_note("bad.md")
+        assert note is not None
+        assert note["metadata"] == {}
+        assert "Content here." in note["content"]
+
+    def test_check_frontmatter_finds_bad_notes(self, vault_dir, vault_service):
+        (vault_dir / "bad.md").write_text("---\n: :\n  bad:\n\t\t[unbalanced\n---\nContent here.")
+        issues = vault_service.check_frontmatter()
+        assert len(issues) == 1
+        assert issues[0]["path"] == "bad.md"
+        assert issues[0]["error"]
+
+    def test_check_frontmatter_clean_vault(self, vault_service):
+        issues = vault_service.check_frontmatter()
+        assert issues == []
+
+    def test_check_frontmatter_with_dir_filter(self, vault_dir, vault_service):
+        (vault_dir / "Daily" / "bad.md").write_text("---\n: :\n\t[x\n---\nBad.")
+        (vault_dir / "bad_root.md").write_text("---\n: :\n\t[x\n---\nAlso bad.")
+        issues = vault_service.check_frontmatter(dir_filter="Daily")
+        paths = [i["path"] for i in issues]
+        assert "Daily/bad.md" in paths
+        assert "bad_root.md" not in paths
+
+
 class TestCaching:
     def test_metadata_cache_used(self, vault_service):
         notes1 = vault_service.list_notes()

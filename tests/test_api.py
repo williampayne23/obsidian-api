@@ -117,3 +117,18 @@ class TestSearchEndpoint:
         resp = fake_client.get("/search", params={"q": "obsidian"})
         for result in resp.json()["results"]:
             assert len(result["matches"]) > 0
+
+
+class TestDiagnosticsEndpoint:
+    def test_frontmatter_check_clean(self, fake_client):
+        resp = fake_client.get("/diagnostics/frontmatter")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] == 0
+        assert data["scanned"] == 5
+        assert data["issues"] == []
+
+    def test_frontmatter_check_with_dir_filter(self, fake_client):
+        resp = fake_client.get("/diagnostics/frontmatter", params={"dir": "Daily"})
+        assert resp.status_code == 200
+        assert resp.json()["scanned"] == 2

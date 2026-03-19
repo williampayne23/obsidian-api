@@ -36,8 +36,12 @@ class VaultService:
         if cached and cached.mtime == mtime:
             return cached
 
-        post = frontmatter.load(str(abs_path))
-        metadata = dict(post.metadata)
+        try:
+            post = frontmatter.load(str(abs_path))
+            metadata = dict(post.metadata)
+        except Exception:
+            metadata = {}
+
         title = metadata.pop("title", abs_path.stem)
         size = abs_path.stat().st_size
 
@@ -80,15 +84,21 @@ class VaultService:
         except ValueError:
             return None
 
-        post = frontmatter.load(str(abs_path))
-        metadata = dict(post.metadata)
+        try:
+            post = frontmatter.load(str(abs_path))
+            metadata = dict(post.metadata)
+            content = post.content
+        except Exception:
+            metadata = {}
+            content = abs_path.read_text(encoding="utf-8", errors="replace")
+
         title = metadata.pop("title", abs_path.stem)
         mtime = self._mtime(abs_path)
 
         return {
             "path": path,
             "title": title,
-            "content": post.content,
+            "content": content,
             "metadata": metadata,
             "modified": self._modified_dt(mtime),
         }
@@ -137,3 +147,22 @@ class VaultService:
                     }
                 )
         return results
+
+    def check_frontmatter(self, dir_filter: str | None = None) -> list[dict]:
+        """Scan for notes with malformed YAML frontmatter."""
+        issues = []
+        for abs_path in self._iter_notes(dir_filter):
+            rel = self._relative_path(abs_path)
+            try:
+                post = frontmatter.load(str(abs_path))
+                if not isinstance(post.metadata, dict):
+                    issues.append({
+                        "path": rel,
+                        "error": f"Frontmatter parsed as {type(post.metadata).__name__}, expected mapping",
+                    })
+            except Exception as e:
+                issues.append({
+                    "path": rel,
+                    "error": str(e),
+                })
+        return issues

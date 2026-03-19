@@ -107,6 +107,10 @@ class FakeVaultService:
                 })
         return results
 
+    def check_frontmatter(self, dir_filter: str | None = None) -> list[dict]:
+        # FakeVaultService notes always have valid frontmatter
+        return []
+
 
 # --- Sample notes used by both fixture types ---
 

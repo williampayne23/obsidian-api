@@ -52,3 +52,22 @@ class FrontmatterCheckResponse(BaseModel):
     issues: list[FrontmatterIssue]
     total: int
     scanned: int
+
+
+class WebhookSubscription(BaseModel):
+    url: str
+    events: list[str] = ["modified", "deleted"]
+    secret: str | None = None
+
+
+class WebhookSubscriptionResponse(BaseModel):
+    id: str
+    url: str
+    events: list[str]
+    created_at: datetime
+
+
+class VaultEvent(BaseModel):
+    event: str  # "modified" or "deleted"
+    paths: list[str]
+    timestamp: datetime

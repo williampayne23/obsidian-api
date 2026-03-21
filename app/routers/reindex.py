@@ -1,16 +1,27 @@
-from fastapi import APIRouter, Depends
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, BackgroundTasks, Depends
 
 from app.dependencies import get_vault
-from app.services.redis_queue import publish_paths
+from app.models import VaultEvent
+from app.services import webhooks
 from app.services.vault import VaultService
 
 router = APIRouter()
 
 
 @router.post("/reindex")
-def reindex(vault: VaultService = Depends(get_vault)):
-    """Push all note paths to the embed queue for bulk re-embedding."""
+async def reindex(
+    background_tasks: BackgroundTasks,
+    vault: VaultService = Depends(get_vault),
+):
+    """Emit webhook events for all notes, triggering a full re-index."""
     notes = vault.list_notes()
     paths = [n.path for n in notes]
-    count = publish_paths(paths, action="upsert")
-    return {"queued": count}
+    event = VaultEvent(
+        event="modified",
+        paths=paths,
+        timestamp=datetime.now(tz=timezone.utc),
+    )
+    background_tasks.add_task(webhooks.dispatch, event)
+    return {"queued": len(paths)}

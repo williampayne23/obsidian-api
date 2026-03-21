@@ -8,6 +8,7 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
+import frontmatter
 from watchfiles import Change, awatch
 
 from app.models import VaultEvent

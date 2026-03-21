@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.config import settings
-from app.routers import notes, changes, search, diagnostics, reindex, webhooks
+from app.routers import notes, changes, search, diagnostics, webhooks
 from app.services.watcher import watch_vault
 
 
@@ -25,7 +25,6 @@ app.include_router(notes.router)
 app.include_router(changes.router)
 app.include_router(search.router)
 app.include_router(diagnostics.router)
-app.include_router(reindex.router)
 app.include_router(webhooks.router)
 
 
